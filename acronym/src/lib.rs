@@ -1,22 +1,18 @@
 pub fn abbreviate(phrase: &str) -> String {
-    phrase.split_whitespace()
-        .flat_map(|word| word.split('-'))
-        .map(|word| {
-            let is_all_caps = word.chars()
-                .filter(|&character| character.is_alphabetic())
-                .all(char::is_uppercase);
-            if is_all_caps {
-                word[0..1].to_string()
-            } else {
-                word.chars().enumerate()
-                    .filter(|&(i, character)| {
-                        i == 0 || character.is_uppercase()
-                    })
-                    .flat_map(|(_, character)| {
-                        character.to_uppercase()
-                    })
-                    .collect()
-            }
-        })
-        .collect()
+    let mut acronym = String::new();
+    let mut previous_character = None;
+    for character in phrase.chars() {
+        if is_part_of_acronym(character, previous_character) {
+            acronym.push(character);
+        }
+        previous_character = Some(character);
+    }
+    acronym.to_uppercase()
+}
+
+fn is_part_of_acronym(character: char, previous_character: Option<char>) -> bool {
+    match previous_character {
+        None => true,
+        Some(p) => p == '-' || p.is_whitespace() || (p.is_lowercase() && character.is_uppercase()),
+    }
 }
