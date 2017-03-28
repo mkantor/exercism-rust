@@ -11,6 +11,7 @@ pub fn abbreviate(phrase: &str) -> String {
 }
 
 fn is_part_of_acronym(character: char, previous_character: Option<char>) -> bool {
+    character.is_alphabetic() &&
     match previous_character {
         None => true,
         Some(p) => p == '-' || p.is_whitespace() || (p.is_lowercase() && character.is_uppercase()),
