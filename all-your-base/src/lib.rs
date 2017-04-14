@@ -12,16 +12,16 @@ fn to_int(number: &[u32], base: u32) -> Result<u32, Error> {
     if base <= 1 {
         return Err(Error::InvalidBase);
     }
-    let mut result = 0;
-    let mut place = number.len() as u32;
-    for digit in number {
-        if *digit >= base {
-            return Err(Error::DigitDoesNotFitBase);
-        }
-        place -= 1;
-        result += digit * base.pow(place);
+
+    if number.iter().any(|&digit| digit >= base) {
+        Err(Error::DigitDoesNotFitBase)
+    } else {
+        Ok(number.iter()
+               .rev()
+               .enumerate()
+               .map(|(place, digit)| digit * base.pow(place as u32))
+               .sum())
     }
-    Ok(result)
 }
 
 fn to_vec(number: u32, base: u32) -> Result<Vec<u32>, Error> {
