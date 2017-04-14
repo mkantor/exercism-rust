@@ -28,29 +28,13 @@ fn to_vec(number: u32, base: u32) -> Result<Vec<u32>, Error> {
     if base <= 1 {
         return Err(Error::InvalidBase);
     }
-    let number_of_digits = number_of_digits(number, base);
-    let mut result = Vec::with_capacity(number_of_digits as usize);
-    let mut remaining = number;
-    let mut place = number_of_digits;
-    while place > 0 {
-        place -= 1;
-        let multiplier = base.pow(place);
-        let next_digit = remaining / multiplier;
-        remaining -= next_digit * multiplier;
-        result.push(next_digit);
-    }
-    Ok(result)
-}
 
-// FIXME: Is there a more direct way to calculate this?
-fn number_of_digits(number: u32, base: u32) -> u32 {
-    if number == 0 {
-        0
-    } else {
-        let mut digits = 1;
-        while base.pow(digits) <= number {
-            digits += 1;
-        }
-        digits
+    let mut digits = vec![];
+    let mut remaining = number;
+    while remaining > 0 {
+        digits.push(remaining % base);
+        remaining = remaining / base;
     }
+    digits.reverse();
+    Ok(digits)
 }
