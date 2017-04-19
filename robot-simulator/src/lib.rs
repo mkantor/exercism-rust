@@ -105,6 +105,8 @@ impl Robot {
     }
 
     // FIXME? Why do the tests expect this to return a reference?
+    // Based on some discussion here: <https://github.com/exercism/xrust/pull/146>, this is
+    // intentional to allow different implementation styles (not require Direction to be Copy).
     pub fn direction(&self) -> &Direction {
         &(self.orientation)
     }
