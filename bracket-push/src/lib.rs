@@ -58,7 +58,7 @@ impl<'a> Brackets<'a> {
         }
 
         // If there are leftovers on the stack then there were unclosed brackets.
-        bracket_scope.len() == 0
+        bracket_scope.is_empty()
     }
 }
 impl<'a> From<&'a str> for Brackets<'a> {
