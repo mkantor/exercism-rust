@@ -1,13 +1,13 @@
 use Chirality::*;
 use Shape::*;
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 enum Chirality {
     Left,
     Right,
 }
 
-#[derive(PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 enum Shape {
     Round,
     Square,
@@ -29,29 +29,17 @@ impl Bracket {
     }
 }
 
-pub struct Brackets<'a> {
-    // TODO? I could just store a Vec<Bracket> here (and make the From<&str> impl walk through the
-    // chars). That would keep this from being tied to the lifetime of the input &str (at the cost
-    // of extra allocations during construction).
-    //
-    // In reality I'd base this decision on usage: Are Brackets instances long-lived? Do callers
-    // need to mutate the input &str? Are the input &strs typically large or small?
-    //
-    // Since I don't have anything to base this on here, go with whatever is more idiomatic.
-    string: &'a str,
-}
-impl<'a> Brackets<'a> {
+pub struct Brackets(Vec<Bracket>);
+impl Brackets {
     pub fn are_balanced(&self) -> bool {
         let mut bracket_scope = vec![];
-        for character in self.string.chars() {
-            if let Some(bracket) = Bracket::new(character) {
-                match bracket {
-                    Bracket(Left, shape) => bracket_scope.push(shape),
-                    Bracket(Right, shape) => {
-                        if bracket_scope.pop() != Some(shape) {
-                            // This right bracket didn't match the previous left bracket.
-                            return false;
-                        }
+        for bracket in &self.0 {
+            match *bracket {
+                Bracket(Left, shape) => bracket_scope.push(shape),
+                Bracket(Right, shape) => {
+                    if bracket_scope.pop() != Some(shape) {
+                        // This right bracket didn't match the previous left bracket.
+                        return false;
                     }
                 }
             }
@@ -61,8 +49,8 @@ impl<'a> Brackets<'a> {
         bracket_scope.is_empty()
     }
 }
-impl<'a> From<&'a str> for Brackets<'a> {
+impl<'a> From<&'a str> for Brackets {
     fn from(string: &'a str) -> Self {
-        Brackets { string: string }
+        Brackets(string.chars().filter_map(Bracket::new).collect())
     }
 }
