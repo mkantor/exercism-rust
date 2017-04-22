@@ -1,120 +1,95 @@
-use Digit::*;
 use LuhnData::*;
-
-#[derive(Clone, Copy)]
-enum Digit {
-    _0,
-    _1,
-    _2,
-    _3,
-    _4,
-    _5,
-    _6,
-    _7,
-    _8,
-    _9,
-}
-impl Digit {
-    // TryFrom would be better, but is unstable.
-    fn from_char(input: char) -> Option<Self> {
-        match input {
-            '0' => Some(_0),
-            '1' => Some(_1),
-            '2' => Some(_2),
-            '3' => Some(_3),
-            '4' => Some(_4),
-            '5' => Some(_5),
-            '6' => Some(_6),
-            '7' => Some(_7),
-            '8' => Some(_8),
-            '9' => Some(_9),
-            _ => None,
-        }
-    }
-}
-impl From<Digit> for u8 {
-    fn from(input: Digit) -> u8 {
-        match input {
-            _0 => 0,
-            _1 => 1,
-            _2 => 2,
-            _3 => 3,
-            _4 => 4,
-            _5 => 5,
-            _6 => 6,
-            _7 => 7,
-            _8 => 8,
-            _9 => 9,
-        }
-    }
-}
 
 enum LuhnData {
     BadInput,
-    GoodInput { digits: Vec<Digit> },
+    GoodInput { number: u64 },
+}
+
+/// Iterate over digits in GoodInput's number, going from least to most significant digit.
+/// Sadly enum variants aren't types, otherwise I could just impl Iterator for GoodInput.
+impl Iterator for LuhnData {
+    type Item = u64;
+    fn next(&mut self) -> Option<Self::Item> {
+        match *self {
+            BadInput => None,
+            GoodInput { number } if number == 0 => None,
+            GoodInput { ref mut number } => {
+                let digit = *number % 10;
+                *number /= 10;
+                Some(digit)
+            }
+        }
+    }
 }
 
 pub struct Luhn {
     data: LuhnData,
 }
+
 impl Luhn {
-    pub fn is_valid(&self) -> bool {
+    pub fn is_valid(self) -> bool {
         match self.data {
             BadInput => false,
-            GoodInput { ref digits } if digits.len() <= 1 => false,
-            GoodInput { ref digits } => {
-                let mut sum = 0;
-                for (i, digit) in digits.iter().rev().enumerate() {
-                    let mut num = u8::from(*digit);
-                    if i % 2 != 0 {
-                        num *= 2;
-                    }
-                    if num > 9 {
-                        num -= 9;
-                    }
-                    sum += num;
-                }
-                sum % 10 == 0
+            GoodInput { number } if number < 10 => false,
+            data @ GoodInput { .. } => {
+                data.enumerate()
+                    .map(|(i, digit)| match i % 2 {
+                             0 => digit,
+                             _ => {
+                                 match digit * 2 {
+                                     output @ 0...9 => output,
+                                     output => output - 9,
+                                 }
+                             }
+                         })
+                    .sum::<u64>() % 10 == 0
             }
         }
     }
 }
+
 impl<'a> From<&'a str> for Luhn {
     fn from(input: &'a str) -> Self {
-        // FIXME? I could avoid allocating a Vec here, instead just holding the &str and using its
-        // chars() Iterator directly in is_valid(). The downside of that approach is that Luhn
-        // instances would need to be lifetime-coupled to the input &str.
-        let mut digits = vec![];
-        for character in input.chars() {
-            if character != ' ' {
-                match Digit::from_char(character) {
-                    Some(digit) => digits.push(digit),
-                    None => return Luhn { data: BadInput },
+        let mut number = 0;
+        for (i, character) in input.chars().filter(|&c| c != ' ').enumerate() {
+            match character.to_digit(10) {
+                Some(digit) => {
+                    // These casts are lame. Why doesn't Rust have things like this in std?
+                    // impl Mul<u32> for u64 {
+                    //     type Output = u64;
+                    //     fn mul(self, rhs: u32) -> Self::Output {
+                    //         self * rhs as u64
+                    //     }
+                    // }
+                    // Also, I'm not sure why pow isn't part of Mul or in its own trait so it
+                    // could be overloaded.
+                    let multiplier = 10u64.pow(i as u32);
+                    number += multiplier * digit as u64;
                 }
+                None => return Luhn { data: BadInput },
             }
         }
-        Luhn { data: GoodInput { digits: digits } }
+        Luhn { data: GoodInput { number: number } }
     }
 }
+
 impl From<String> for Luhn {
     fn from(input: String) -> Self {
         Luhn::from(input.as_str())
     }
 }
-macro_rules! from_impl_via_to_string {
-    ($t:ty) => {
+
+macro_rules! from_uint_impl {
+    ($t: ty) => {
         impl From<$t> for Luhn {
             fn from(input: $t) -> Self {
-                Luhn::from(input.to_string())
+                Luhn { data: GoodInput { number: input as u64 } }
             }
         }
     }
 }
-// FIXME? Converting through String allocations for these types is wasteful (I could implement
-// Iterators to emit Digits directly from the ints instead). However this has the advantage of
-// being succinct and re-using what I already have.
-from_impl_via_to_string! { u8 }
-from_impl_via_to_string! { u16 }
-from_impl_via_to_string! { u32 }
-from_impl_via_to_string! { u64 }
-from_impl_via_to_string! { usize }
+from_uint_impl! { u8 }
+from_uint_impl! { u16 }
+from_uint_impl! { u32 }
+from_uint_impl! { u64 }
+from_uint_impl! { usize }
