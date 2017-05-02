@@ -20,14 +20,8 @@ pub fn sublist<A>(list_1: &[A], list_2: &[A]) -> Comparison
 fn is_sublist<A>(short_list: &[A], long_list: &[A]) -> bool
     where A: PartialEq
 {
-    if short_list.is_empty() {
-        true
-    } else {
-        for candidate in long_list.windows(short_list.len()) {
-            if candidate == short_list {
-                return true;
-            }
-        }
-        false
-    }
+    short_list.is_empty() ||
+    long_list
+        .windows(short_list.len())
+        .any(|candidate| candidate == short_list)
 }
