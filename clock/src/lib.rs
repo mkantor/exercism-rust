@@ -4,15 +4,17 @@ pub struct Clock {
 }
 
 impl Clock {
+    const MINUTES_IN_DAY: isize = 24 * 60;
+
     pub fn new(hours: isize, minutes: isize) -> Self {
-        let total_minutes = hours % 24 * 60 + minutes;
+        let total_minutes = (hours % 24) * 60 + minutes;
         if total_minutes < 0 {
             Self {
-                minute_of_day: (1440 + total_minutes % 1440) as u16
+                minute_of_day: (Self::MINUTES_IN_DAY + total_minutes % Self::MINUTES_IN_DAY) as u16
             }
         } else {
             Self {
-                minute_of_day: (total_minutes % 1440) as u16
+                minute_of_day: (total_minutes % Self::MINUTES_IN_DAY) as u16
             }
         }
     }
