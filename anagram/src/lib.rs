@@ -8,30 +8,27 @@ pub fn anagrams_for<'a>(word: &str, possible_anagrams: &'a [&str]) -> HashSet<&'
 
     possible_anagrams
         .iter()
-        .filter_map(|&possible_anagram| {
+        .filter(|&possible_anagram| {
             let normalized_possible_anagram = possible_anagram.to_lowercase();
             if normalized_possible_anagram == normalized_word {
-                None // Words are not their own anagrams.
+                false // Words are not their own anagrams.
             } else {
                 let possible_anagram_histogram =
                     Histogram::new(normalized_possible_anagram.chars());
-                if possible_anagram_histogram == word_histogram {
-                    Some(possible_anagram)
-                } else {
-                    None
-                }
+                possible_anagram_histogram == word_histogram
             }
         })
+        .cloned()
         .collect()
 }
 
 #[derive(PartialEq, Eq)]
 struct Histogram<K: Eq + Hash> {
-    counts: HashMap<K, isize>,
+    counts: HashMap<K, usize>,
 }
 
 impl<K: Eq + Hash> Histogram<K> {
-    fn new<I: Iterator<Item = K>>(items: I) -> Self {
+    fn new<I: IntoIterator<Item = K>>(items: I) -> Self {
         let mut counts = HashMap::new();
         for item in items {
             let counter = counts.entry(item).or_insert(0);
